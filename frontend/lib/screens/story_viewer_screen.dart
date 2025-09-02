@@ -189,13 +189,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               ),
             ),
           ),
-          IconButton(
-            onPressed: _playCurrentPage,
-            icon: Icon(
-              _isPlaying ? Icons.pause : Icons.play_arrow,
-              color: Colors.white,
-            ),
-          ),
+          // Audio button removed - now shown at bottom of story pages
+          const SizedBox(width: 48), // Spacer to keep title centered
         ],
       ),
     );
@@ -305,74 +300,110 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         );
         
       case PageType.content:
-        return SingleChildScrollView(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Text Content (Left side)
-              Expanded(
-                flex: 3,
-                child: Text(
-                  page.content ?? 'No content available',
-                  style: GoogleFonts.nunito(
-                    fontSize: 16,
-                    height: 1.6,
-                    color: AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.justify,
-                ),
-              ),
-              
-              // Image (Right side) - if available
-              if (page.imageUrl != null) ...[
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
-                        imageUrl: page.imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
+        return Column(
+          children: [
+            // Story content with image
+            Expanded(
+              child: SingleChildScrollView(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Text Content (Left side)
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        page.content ?? 'No content available',
+                        style: GoogleFonts.nunito(
+                          fontSize: 16,
+                          height: 1.6,
+                          color: AppColors.textPrimary,
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[200],
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.image_not_supported,
-                                size: 32,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Image not available',
-                                style: GoogleFonts.nunito(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
+                        textAlign: TextAlign.justify,
+                      ),
+                    ),
+                    
+                    // Image (Right side) - if available
+                    if (page.imageUrl != null) ...[
+                      const SizedBox(width: 20),
+                      Expanded(
+                        flex: 2,
+                        child: Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: CachedNetworkImage(
+                              imageUrl: page.imageUrl!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
                                 ),
                               ),
-                            ],
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey[200],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_not_supported,
+                                      size: 32,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Image not available',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            
+            // Audio Control Button at bottom
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 16),
+              child: ElevatedButton.icon(
+                onPressed: _playCurrentPage,
+                icon: Icon(
+                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                  size: 24,
+                ),
+                label: Text(
+                  _isPlaying ? 'Pause Audio' : 'Listen to Story',
+                  style: GoogleFonts.nunito(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-            ],
-          ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isPlaying ? Colors.red : AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+              ),
+            ),
+          ],
         );
         
       case PageType.end:
