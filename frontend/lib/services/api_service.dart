@@ -6,7 +6,7 @@ import '../models/story.dart';
 
 class ApiService {
   // For development - local Flask server
-  static const String baseUrl = 'http://localhost:8080/api';
+  static const String baseUrl = 'http://127.0.0.1:8080/api';
   
   // For production - Vercel deployment
   // static const String baseUrl = 'https://your-vercel-app.vercel.app/api';
@@ -16,17 +16,23 @@ class ApiService {
     if (relativeUrl.startsWith('http')) {
       return relativeUrl;
     }
-    return 'http://localhost:8080$relativeUrl';
+    return 'http://127.0.0.1:8080$relativeUrl';
   }
   
   // Story generation
   static Future<Story> generateStory(StoryRequest request) async {
     try {
+      print('🔗 Making API request to: $baseUrl/stories/generate');
+      print('📝 Request data: ${jsonEncode(request.toJson())}');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/stories/generate'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(request.toJson()),
       );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -39,6 +45,7 @@ class ApiService {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
+      print('❌ API Error: $e');
       throw Exception('Network error: $e');
     }
   }
@@ -196,14 +203,56 @@ class ApiService {
   // Health check
   static Future<bool> checkHealth() async {
     try {
+      print('🏥 Health check to: $baseUrl/health');
       final response = await http.get(
         Uri.parse('$baseUrl/health'),
         headers: {'Content-Type': 'application/json'},
       );
 
-      return response.statusCode == 200;
+      print('🏥 Health check response: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        print('✅ Backend is healthy');
+        return true;
+      } else {
+        print('❌ Backend health check failed: ${response.statusCode}');
+        return false;
+      }
     } catch (e) {
+      print('❌ Health check error: $e');
       return false;
+    }
+  }
+
+  // Test connection and debug
+  static Future<void> testConnection() async {
+    try {
+      print('🧪 Testing API connection...');
+      
+      // Test different URLs
+      final testUrls = [
+        'http://127.0.0.1:8080/api/health',
+        'http://localhost:8080/api/health',
+        'http://192.168.17.89:8080/api/health', // From your backend logs
+      ];
+      
+      for (String url in testUrls) {
+        try {
+          print('🔍 Testing: $url');
+          final response = await http.get(
+            Uri.parse(url),
+            headers: {'Content-Type': 'application/json'},
+          ).timeout(const Duration(seconds: 5));
+          
+          print('✅ $url responded with ${response.statusCode}');
+          if (response.statusCode == 200) {
+            print('📄 Response: ${response.body}');
+          }
+        } catch (e) {
+          print('❌ $url failed: $e');
+        }
+      }
+    } catch (e) {
+      print('❌ Connection test failed: $e');
     }
   }
 }

@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:api_key_pool/api_key_pool.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
-import 'screens/story_generator_screen.dart';
-import 'screens/story_viewer_screen.dart';
 import 'providers/story_provider.dart';
 import 'providers/theme_provider.dart';
 import 'utils/app_colors.dart';
 import 'utils/app_sizes.dart';
 import 'services/firebase_service.dart';
-import 'test_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,13 +27,15 @@ void main() async {
     // Continue without Firebase for now
   }
   
-  // Test Firebase connection
-  try {
-    bool isConnected = await FirebaseService.testConnection();
-    print('Firebase connection test: ${isConnected ? "SUCCESS" : "FAILED"}');
-  } catch (e) {
-    print('Firebase connection test error: $e');
-  }
+  // Test Firebase connection in background (non-blocking)
+  Future.delayed(const Duration(milliseconds: 500), () async {
+    try {
+      bool isConnected = await FirebaseService.testConnection();
+      print('Firebase connection test: ${isConnected ? "SUCCESS" : "FAILED"}');
+    } catch (e) {
+      print('Firebase connection test error: $e');
+    }
+  });
   
   runApp(const MyApp());
 }
@@ -65,12 +63,11 @@ class MyApp extends StatelessWidget {
               primarySwatch: Colors.blue,
               primaryColor: AppColors.primary,
               scaffoldBackgroundColor: AppColors.background,
-              textTheme: GoogleFonts.nunitoTextTheme(),
               appBarTheme: AppBarTheme(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                titleTextStyle: GoogleFonts.nunito(
+                titleTextStyle: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -90,7 +87,6 @@ class MyApp extends StatelessWidget {
             home: const HomeScreen(),
             routes: {
               '/home': (context) => const HomeScreen(),
-              '/generator': (context) => const StoryGeneratorScreen(),
             },
           );
         },

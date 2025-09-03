@@ -45,8 +45,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     final title = widget.story.title;
     final theme = widget.story.theme;
 
-    // Split content into paragraphs
-    final paragraphs = content.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    // Split content into sentences for better page distribution
+    final sentences = content.split(RegExp(r'[.!?]+\s*')).where((s) => s.trim().isNotEmpty).toList();
     
     _pages = [];
     
@@ -58,21 +58,31 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       imageUrl: imageUrls.isNotEmpty ? imageUrls[0] : null,
     ));
 
-    // Content pages (max 8 pages for content)
-    final maxContentPages = 8;
-    final contentPerPage = (paragraphs.length / maxContentPages).ceil();
+    // Content pages (aim for 8-10 content pages)
+    final targetPages = 8;
+    final sentencesPerPage = (sentences.length / targetPages).ceil().clamp(1, 4);
     
-    for (int i = 0; i < paragraphs.length; i += contentPerPage) {
-      final endIndex = (i + contentPerPage < paragraphs.length) ? i + contentPerPage : paragraphs.length;
-      final pageContent = paragraphs.sublist(i, endIndex).join('\n\n');
-      final pageIndex = _pages.length;
-      final imageUrl = pageIndex < imageUrls.length ? imageUrls[pageIndex] : null;
+    // Generate placeholder images for pages that don't have them
+    List<String> allImageUrls = List.from(imageUrls);
+    while (allImageUrls.length < targetPages + 2) { // +2 for title and end pages
+      allImageUrls.add('https://picsum.photos/400/300?random=${allImageUrls.length}');
+    }
+    
+    for (int i = 0; i < sentences.length; i += sentencesPerPage) {
+      final endIndex = (i + sentencesPerPage < sentences.length) ? i + sentencesPerPage : sentences.length;
+      final pageContent = sentences.sublist(i, endIndex).join('. ').trim();
+      if (pageContent.isNotEmpty && !pageContent.endsWith('.')) {
+        // pageContent += '.'; // Ensure sentences end with period
+      }
+      
+      final pageIndex = _pages.length - 1; // -1 because title page is index 0
+      final imageUrl = pageIndex < allImageUrls.length ? allImageUrls[pageIndex] : allImageUrls.last;
       
       _pages.add(StoryPage(
         type: PageType.content,
-        content: pageContent,
+        content: pageContent.isEmpty ? 'Content continues...' : pageContent,
         imageUrl: imageUrl,
-        pageNumber: pageIndex,
+        pageNumber: pageIndex + 1,
       ));
     }
 
@@ -81,6 +91,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       type: PageType.end,
       title: "The End",
       theme: theme,
+      imageUrl: allImageUrls.length > 1 ? allImageUrls[1] : null,
     ));
   }
 
@@ -182,7 +193,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             child: Text(
               'Page ${_currentPage + 1} of ${_pages.length}',
               textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -198,22 +209,22 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 
   Widget _buildPage(StoryPage page) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: _buildContentSection(page),
         ),
       ),
@@ -228,12 +239,19 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           children: [
             if (page.imageUrl != null) ...[
               Container(
-                height: 250,
+                height: MediaQuery.of(context).size.height * 0.3,
                 width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 24),
+                margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
@@ -274,8 +292,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             Text(
               page.title ?? 'Untitled',
               textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(
-                fontSize: 28,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
                 height: 1.2,
@@ -285,16 +303,24 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             Text(
               'A ${page.theme ?? 'Magical'} Story',
               style: GoogleFonts.nunito(
-                fontSize: 16,
+                fontSize: 18,
                 color: AppColors.textSecondary,
                 fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 24),
-            Icon(
-              Icons.auto_stories,
-              size: 48,
-              color: AppColors.primary,
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Icon(
+                Icons.auto_stories,
+                size: 40,
+                color: AppColors.primary,
+              ),
             ),
           ],
         );
@@ -302,83 +328,71 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       case PageType.content:
         return Column(
           children: [
-            // Story content with image
-            Expanded(
-              child: SingleChildScrollView(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Text Content (Left side)
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        page.content ?? 'No content available',
-                        style: GoogleFonts.nunito(
-                          fontSize: 16,
-                          height: 1.6,
-                          color: AppColors.textPrimary,
-                        ),
-                        textAlign: TextAlign.justify,
-                      ),
+            // Image at top for mobile-friendly layout
+            if (page.imageUrl != null) ...[
+              Container(
+                height: MediaQuery.of(context).size.height * 0.25,
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                    
-                    // Image (Right side) - if available
-                    if (page.imageUrl != null) ...[
-                      const SizedBox(width: 20),
-                      Expanded(
-                        flex: 2,
-                        child: Container(
-                          height: 200,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: page.imageUrl!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey[200],
-                                child: const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: Colors.grey[200],
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.image_not_supported,
-                                      size: 32,
-                                      color: Colors.grey[400],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Image not available',
-                                      style: GoogleFonts.nunito(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: CachedNetworkImage(
+                    imageUrl: page.imageUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[200],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Image not available',
+                            style: GoogleFonts.nunito(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            
+            // Story content with drop cap
+            Expanded(
+              child: SingleChildScrollView(
+                child: _buildStoryText(page.content ?? 'No content available'),
               ),
             ),
             
             // Audio Control Button at bottom
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(top: 16),
+              margin: const EdgeInsets.only(top: 20),
               child: ElevatedButton.icon(
                 onPressed: _playCurrentPage,
                 icon: Icon(
@@ -410,10 +424,63 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // End page image
+            if (page.imageUrl != null) ...[
+              Container(
+                height: 200,
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: CachedNetworkImage(
+                    imageUrl: page.imageUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[200],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Image not available',
+                            style: GoogleFonts.nunito(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             Text(
               page.title ?? 'The End',
-              style: GoogleFonts.nunito(
-                fontSize: 24,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
@@ -428,8 +495,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             Text(
               'Thank you for reading!',
               style: GoogleFonts.nunito(
-                fontSize: 16,
+                fontSize: 18,
                 color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
               ),
             ),
             const SizedBox(height: 24),
@@ -500,6 +568,51 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoryText(String content) {
+    if (content.isEmpty) return const Text('No content available');
+    
+    // Get the first character for drop cap
+    final firstChar = content.isNotEmpty ? content[0].toUpperCase() : '';
+    final restOfText = content.length > 1 ? content.substring(1) : '';
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Text with drop cap
+          RichText(
+            textAlign: TextAlign.justify,
+            text: TextSpan(
+              children: [
+                // Drop cap - first letter
+                TextSpan(
+                  text: firstChar,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                    height: 0.8,
+                  ),
+                ),
+                // Rest of the text
+                TextSpan(
+                  text: restOfText,
+                  style: GoogleFonts.nunito(
+                    fontSize: 18,
+                    height: 1.8,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
