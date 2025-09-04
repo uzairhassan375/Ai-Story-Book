@@ -9,12 +9,19 @@ import 'providers/theme_provider.dart';
 import 'utils/app_colors.dart';
 import 'utils/app_sizes.dart';
 import 'services/firebase_service.dart';
+import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize API Key Pool
-  ApiKeyPool.init('ai_storybook_frontend');
+  // Initialize API Key Pool with proper async handling
+  try {
+    await ApiKeyPool.init('ai_storybook_frontend');
+    print('✅ API Key Pool initialized successfully');
+  } catch (e) {
+    print('⚠️ API Key Pool initialization failed: $e');
+    // Continue without API Key Pool - backend will use fallback
+  }
   
   // Initialize Firebase with proper options
   try {
@@ -34,6 +41,28 @@ void main() async {
       print('Firebase connection test: ${isConnected ? "SUCCESS" : "FAILED"}');
     } catch (e) {
       print('Firebase connection test error: $e');
+    }
+  });
+  
+  // Send API keys to backend for rotation (non-blocking)
+  Future.delayed(const Duration(seconds: 3), () async {
+    try {
+      print('🔄 Sending API keys to backend for rotation...');
+      
+      // First test the ApiKeyPool
+      print('🧪 Testing ApiKeyPool first...');
+      await ApiService.testApiKeyPool();
+      
+      // Then try to sync with backend
+      final result = await ApiService.sendApiKeysToBackend();
+      if (result['success'] == true) {
+        print('✅ API keys successfully configured for rotation');
+      } else {
+        print('⚠️ API key sync result: ${result['message'] ?? result['error']}');
+      }
+    } catch (e) {
+      print('❌ Failed to send API keys to backend: $e');
+      // Continue without key rotation - app will use backend fallback key
     }
   });
   

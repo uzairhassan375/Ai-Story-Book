@@ -1,3 +1,7 @@
+ai_storybook_frontend
+3.0
+file:///C:/Users/uzair/Ai-Story-Book/frontend/
+file:///C:/Users/uzair/Ai-Story-Book/frontend/lib/
 api_key_pool
 3.5
 file:///C:/Users/uzair/AppData/Local/Pub/Cache/git/Api-Keys-Config-Package-4a57ad6dfcdfacaaef31274213880110ab907aa3/
@@ -310,10 +314,6 @@ xdg_directories
 3.3
 file:///C:/Users/uzair/AppData/Local/Pub/Cache/hosted/pub.dev/xdg_directories-1.1.0/
 file:///C:/Users/uzair/AppData/Local/Pub/Cache/hosted/pub.dev/xdg_directories-1.1.0/lib/
-ai_storybook_frontend
-3.0
-file:///C:/Users/uzair/Desktop/ai_storybook_gen/frontend/
-file:///C:/Users/uzair/Desktop/ai_storybook_gen/frontend/lib/
 sky_engine
 3.7
 file:///C:/flutter/bin/cache/pkg/sky_engine/

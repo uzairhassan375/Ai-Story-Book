@@ -1,31 +1,91 @@
 import '../services/api_service.dart';
 
+class StoryPage {
+  final int pageNumber;
+  final String script;
+  final String? imageUrl;
+
+  StoryPage({
+    required this.pageNumber,
+    required this.script,
+    this.imageUrl,
+  });
+
+  factory StoryPage.fromJson(Map<String, dynamic> json) {
+    return StoryPage(
+      pageNumber: json['pageNumber'] as int,
+      script: json['script'] as String,
+      imageUrl: json['imageUrl'] != null ? ApiService.getImageUrl(json['imageUrl'] as String) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'pageNumber': pageNumber,
+      'script': script,
+      'imageUrl': imageUrl,
+    };
+  }
+}
+
 class Story {
   final String id;
   final String title;
-  final String content;
+  final List<StoryPage> pages;
   final String theme;
-  final List<String> imageUrls;
   final String audioUrl;
   final DateTime createdAt;
 
   Story({
     required this.id,
     required this.title,
-    required this.content,
+    required this.pages,
     required this.theme,
-    required this.imageUrls,
     required this.audioUrl,
     required this.createdAt,
   });
 
+  // Backward compatibility - get content from all pages
+  String get content => pages.map((page) => page.script).join('\n\n');
+  
+  // Backward compatibility - get image URLs from all pages
+  List<String> get imageUrls => pages.map((page) => page.imageUrl ?? '').where((url) => url.isNotEmpty).toList();
+
   factory Story.fromJson(Map<String, dynamic> json) {
+    // Handle both old format (content + imageUrls) and new format (pages)
+    List<StoryPage> storyPages;
+    
+    if (json['pages'] != null) {
+      // New 10-page format
+      storyPages = (json['pages'] as List)
+          .map((pageJson) => StoryPage.fromJson(pageJson))
+          .toList();
+    } else {
+      // Backward compatibility with old format
+      final content = json['content'] as String? ?? '';
+      final imageUrls = json['imageUrls'] as List<dynamic>? ?? [];
+      
+      // Split content into sentences and create pages
+      final sentences = content.split('. ').where((s) => s.trim().isNotEmpty).toList();
+      storyPages = [];
+      
+      for (int i = 0; i < 10; i++) {
+        final pageContent = i < sentences.length ? sentences[i] + '.' : 'The story continues...';
+        final imageUrl = i < imageUrls.length ? imageUrls[i] as String? : null;
+        
+        storyPages.add(StoryPage(
+          pageNumber: i + 1,
+          script: pageContent,
+          imageUrl: imageUrl,
+        ));
+      }
+    }
+
     return Story(
       id: json['id'] as String,
       title: json['title'] as String,
-      content: json['content'] as String,
+      pages: storyPages,
       theme: json['theme'] as String,
-      imageUrls: List<String>.from(json['imageUrls']).map((url) => ApiService.getImageUrl(url)).toList(),
       audioUrl: json['audioUrl'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
@@ -35,9 +95,8 @@ class Story {
     return {
       'id': id,
       'title': title,
-      'content': content,
+      'pages': pages.map((page) => page.toJson()).toList(),
       'theme': theme,
-      'imageUrls': imageUrls,
       'audioUrl': audioUrl,
       'createdAt': createdAt.toIso8601String(),
     };

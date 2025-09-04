@@ -19,6 +19,102 @@ class ApiService {
     return 'http://127.0.0.1:8080$relativeUrl';
   }
   
+  // Manual function to test ApiKeyPool
+  static Future<void> testApiKeyPool() async {
+    try {
+      print('🧪 Testing ApiKeyPool...');
+      
+      // Test initialization
+      await ApiKeyPool.init('ai_storybook_frontend');
+      print('✅ ApiKeyPool.init() completed');
+      
+      // Wait for Firebase
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // Try initialize method
+      await ApiKeyPool.initialize();
+      print('✅ ApiKeyPool.initialize() completed');
+      
+      // Check keys
+      final keys = ApiKeyPool.allKeys;
+      print('🔑 Keys found: ${keys.length}');
+      print('🔑 Keys: $keys');
+      
+      // Test getKey method
+      if (keys.isNotEmpty) {
+        final testKey = ApiKeyPool.getKey();
+        print('🔑 Test key: ${testKey.substring(0, 10)}...');
+      }
+      
+    } catch (e) {
+      print('❌ ApiKeyPool test error: $e');
+    }
+  }
+
+  // Send all API keys to backend for rotation
+  static Future<Map<String, dynamic>> sendApiKeysToBackend() async {
+    try {
+      print('🔑 Initializing ApiKeyPool and fetching keys...');
+      
+      // First, ensure ApiKeyPool is properly initialized
+      await ApiKeyPool.init('ai_storybook_frontend');
+      
+      // Wait a bit for Firebase to fully load the keys
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Try to initialize again if keys are still empty
+      if (ApiKeyPool.allKeys.isEmpty) {
+        print('🔄 Keys still empty, trying initialize() method...');
+        await ApiKeyPool.initialize();
+        await Future.delayed(const Duration(milliseconds: 1000));
+      }
+      
+      // Get all keys from the API Key Pool
+      final keys = ApiKeyPool.allKeys;
+      print('🔑 Found ${keys.length} keys: $keys');
+      
+      if (keys.isEmpty) {
+        print('⚠️ No API keys found in ApiKeyPool - will use backend fallback');
+        // Don't throw error, let backend use its fallback key
+        return {
+          'success': false,
+          'message': 'No keys found in ApiKeyPool, backend will use fallback'
+        };
+      }
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/keys/update'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'api_keys': keys,
+          'app_name': 'ai_storybook_frontend',
+        }),
+      );
+      
+      print('📡 Keys upload response: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          print('✅ API keys successfully sent to backend');
+          return data;
+        } else {
+          throw Exception(data['error'] ?? 'Failed to update API keys');
+        }
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ API Keys Upload Error: $e');
+      // Don't throw error, let the app continue with backend fallback
+      return {
+        'success': false,
+        'error': 'Failed to send API keys to backend: $e'
+      };
+    }
+  }
+  
   // Story generation
   static Future<Story> generateStory(StoryRequest request) async {
     try {

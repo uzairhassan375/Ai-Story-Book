@@ -1,0 +1,26 @@
+# API Key Storage - Never commit API keys!
+backend/api_keys_pool.json
+
+# Environment variables
+backend/.env
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
