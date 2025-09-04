@@ -566,9 +566,9 @@ story_service = StoryService()
 def health_check():
     try:
         pool_status = ApiKeyPool.get_pool_status()
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
             'api_key_configured': bool(gemini_api_key),
             'key_pool_status': pool_status
         }), 200
