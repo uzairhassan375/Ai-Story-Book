@@ -6,17 +6,23 @@ import '../models/story.dart';
 
 class ApiService {
   // For development - local Flask server
-  static const String baseUrl = 'http://127.0.0.1:8080/api';
-  
+  // static const String baseUrl = 'http://127.0.0.1:8080/api';
+
   // For production - Vercel deployment
-  // static const String baseUrl = 'https://your-vercel-app.vercel.app/api';
+  static const String baseUrl = 'https://backend-dwcdu4j2h-uzairhassan375s-projects.vercel.app/api';
   
   // Helper method to convert relative image URLs to absolute URLs
-  static String getImageUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http')) {
-      return relativeUrl;
+  static String getImageUrl(String imageUrl) {
+    // If it's already a data URL (base64), return as-is
+    if (imageUrl.startsWith('data:')) {
+      return imageUrl;
     }
-    return 'http://127.0.0.1:8080$relativeUrl';
+    // If it's already a full URL, return as-is
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    // Otherwise, treat as relative URL
+    return 'https://backend-dwcdu4j2h-uzairhassan375s-projects.vercel.app$imageUrl';
   }
   
   // Manual function to test ApiKeyPool
@@ -120,28 +126,39 @@ class ApiService {
     try {
       print('🔗 Making API request to: $baseUrl/stories/generate');
       print('📝 Request data: ${jsonEncode(request.toJson())}');
-      
+
       final response = await http.post(
         Uri.parse('$baseUrl/stories/generate'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(request.toJson()),
-      );
+      ).timeout(const Duration(seconds: 60)); // Add timeout
 
       print('📡 Response status: ${response.statusCode}');
       print('📄 Response body: ${response.body}');
+      print('📄 Response headers: ${response.headers}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('📊 Parsed response data: $data');
+
         if (data['success'] == true && data['data'] != null) {
-          return Story.fromJson(data['data']);
+          print('✅ API call successful, parsing story...');
+          final story = Story.fromJson(data['data']);
+          print('✅ Story parsed successfully');
+          return story;
         } else {
+          print('❌ API returned error response');
           throw Exception(data['error'] ?? 'Failed to generate story');
         }
       } else {
+        print('❌ HTTP error response');
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
-    } catch (e) {
-      print('❌ API Error: $e');
+    } catch (e, stackTrace) {
+      print('❌ API Error in generateStory:');
+      print('🔴 Error: $e');
+      print('🔴 Stack trace: $stackTrace');
+      print('🔴 Error type: ${e.runtimeType}');
       throw Exception('Network error: $e');
     }
   }

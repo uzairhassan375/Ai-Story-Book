@@ -5,7 +5,6 @@ import '../providers/story_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/app_colors.dart';
 import '../models/story.dart';
-import '../services/api_service.dart';
 import 'story_viewer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -189,7 +188,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               selectedItemBuilder: (BuildContext context) {
                                 return _themes.map((theme) {
-                                  final isSelected = _selectedTheme == theme['name'];
                                   return Row(
                                     children: [
                                       Container(
@@ -396,7 +394,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _generateStory(BuildContext context) {
+    print('🚀 Generate Story button clicked');
+
     if (_promptController.text.trim().isEmpty) {
+      print('⚠️ Empty prompt detected');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -417,16 +418,32 @@ class _HomeScreenState extends State<HomeScreen> {
           : null,
     );
 
+    print('📝 Story Request created:');
+    print('   - Prompt: ${request.prompt}');
+    print('   - Theme: ${request.theme}');
+    print('   - Additional Context: ${request.additionalContext}');
+
     context.read<StoryProvider>().generateStory(request).then((_) {
+      print('🎯 Story generation promise resolved');
       final storyProvider = context.read<StoryProvider>();
       if (storyProvider.currentStory != null) {
+        print('✅ Story generated, navigating to viewer');
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => StoryViewerScreen(story: storyProvider.currentStory!),
           ),
         );
+      } else {
+        print('❌ No story generated, checking for errors...');
+        if (storyProvider.error != null) {
+          print('🔴 Provider error: ${storyProvider.error}');
+        }
       }
+    }).catchError((error) {
+      print('💥 Generate story promise error:');
+      print('🔴 Error: $error');
+      print('🔴 Error type: ${error.runtimeType}');
     });
   }
 

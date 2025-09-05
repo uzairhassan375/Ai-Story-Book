@@ -440,37 +440,28 @@ Write an engaging {theme.lower()} story that flows naturally across all 10 pages
         """Generate an image for each of the 10 pages"""
         try:
             print("🎨 Generating images for all 10 pages...")
+            print(f"🔑 API key available: {bool(gemini_api_key)}")
+            print(f"🔑 API key preview: {gemini_api_key[:10] if gemini_api_key else 'None'}...")
             
             for i, page in enumerate(pages):
                 print(f"🖼️ Generating image for page {page['pageNumber']}...")
                 
                 # Build image prompt for this specific page
                 image_prompt = self._build_image_prompt(page['script'], theme)
+                print(f"📝 Image prompt: {image_prompt[:100]}...")
                 
                 # Generate image using our image service
                 if gemini_api_key:
                     result = gemini_image_service.generate_gemini_image(image_prompt)
                     if result['success'] and result.get('imageBytes'):
-                        # Save image to a temporary file and return URL
-                        import tempfile
-                        import os
+                        # Convert image bytes to base64 for direct embedding
+                        import base64
+                        image_base64 = base64.b64encode(result['imageBytes']).decode('utf-8')
                         
-                        # Create a unique filename
-                        timestamp = int(datetime.now().timestamp() * 1000)
-                        filename = f"story_image_{timestamp}_{i}.jpg"
-                        
-                        # Save image to temp directory
-                        temp_dir = "temp_images"
-                        if not os.path.exists(temp_dir):
-                            os.makedirs(temp_dir)
-                        
-                        image_path = os.path.join(temp_dir, filename)
-                        with open(image_path, 'wb') as f:
-                            f.write(result['imageBytes'])
-                        
-                        # Update page with image URL
-                        page['imageUrl'] = f"/api/images/{filename}"
-                        print(f'✅ Generated image for page {page["pageNumber"]}: {image_path}')
+                        # Update page with base64 data URL
+                        page['imageUrl'] = f"data:image/jpeg;base64,{image_base64}"
+                        page['imageBase64'] = image_base64  # Also provide raw base64
+                        print(f'✅ Generated image for page {page["pageNumber"]} (base64: {len(image_base64)} chars)')
                     else:
                         print(f'❌ Image generation failed for page {page["pageNumber"]}: {result.get("error")}')
                         # Fallback to placeholder

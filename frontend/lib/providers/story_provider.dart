@@ -15,15 +15,28 @@ class StoryProvider extends ChangeNotifier {
     _setLoading(true);
     _error = null;
 
-    try {
+    try {      print('🔄 Starting story generation...');
+      print('📝 Request: ${request.toJson()}');
+
       final story = await ApiService.generateStory(request);
+      print('✅ Story generated successfully');
+      print('📖 Story title: ${story.title}');
+      print('📄 Pages count: ${story.pages.length}');
+
       _currentStory = story;
       notifyListeners();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ STORY GENERATION ERROR:');
+      print('🔴 Error: $e');
+      print('🔴 Stack Trace: $stackTrace');
+      print('🔴 Error type: ${e.runtimeType}');
+      print('🔴 Error toString: ${e.toString()}');
+
       _error = e.toString();
       notifyListeners();
     } finally {
       _setLoading(false);
+      print('🏁 Story generation process finished');
     }
   }
 
