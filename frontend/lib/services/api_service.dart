@@ -9,7 +9,7 @@ class ApiService {
   // static const String baseUrl = 'http://127.0.0.1:8080/api';
 
   // For production - Vercel deployment
-  static const String baseUrl = 'https://backend-dwcdu4j2h-uzairhassan375s-projects.vercel.app/api';
+  static const String baseUrl = 'https://backend-nnb87jchz-uzairhassan375s-projects.vercel.app/api';
   
   // Helper method to convert relative image URLs to absolute URLs
   static String getImageUrl(String imageUrl) {
@@ -22,7 +22,7 @@ class ApiService {
       return imageUrl;
     }
     // Otherwise, treat as relative URL
-    return 'https://backend-dwcdu4j2h-uzairhassan375s-projects.vercel.app$imageUrl';
+    return 'https://backend-nnb87jchz-uzairhassan375s-projects.vercel.app$imageUrl';
   }
   
   // Manual function to test ApiKeyPool
@@ -259,29 +259,115 @@ class ApiService {
     }
   }
 
-  // Generate image
+  // Generate single image - optimized for Vercel
+  static Future<Map<String, dynamic>> generateSingleImage({
+    required String prompt,
+  }) async {
+    try {
+      print('🖼️ Generating single image for prompt: ${prompt.substring(0, 50)}...');
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/generate-image'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'prompt': prompt,
+        }),
+      ).timeout(const Duration(seconds: 30)); // 30 second timeout
+
+      print('📡 Single image response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('✅ Single image generated successfully');
+        return data;
+      } else {
+        print('❌ Single image generation failed: ${response.statusCode}');
+        throw Exception('Failed to generate image: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Single image generation error: $e');
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Generate multiple images for story pages
+  static Future<List<String?>> generateMultipleImages({
+    required List<String> prompts,
+    bool parallel = true,
+  }) async {
+    try {
+      print('🎨 Generating ${prompts.length} images (parallel: $parallel)...');
+      
+      if (parallel) {
+        // Generate all images in parallel using Future.wait
+        print('🚀 Starting parallel image generation...');
+        
+        final futures = prompts.asMap().entries.map((entry) async {
+          final index = entry.key;
+          final prompt = entry.value;
+          
+          try {
+            print('🖼️ Starting image $index...');
+            final result = await generateSingleImage(prompt: prompt);
+            
+            if (result['success'] == true && result.containsKey('imageBase64')) {
+              final base64 = result['imageBase64'] as String;
+              print('✅ Image $index completed (${base64.length} chars)');
+              return 'data:image/jpeg;base64,$base64';
+            } else {
+              print('❌ Image $index failed: ${result['error']}');
+              return null;
+            }
+          } catch (e) {
+            print('❌ Image $index error: $e');
+            return null;
+          }
+        });
+        
+        final results = await Future.wait(futures);
+        print('🏁 Parallel generation completed: ${results.where((r) => r != null).length}/${prompts.length} successful');
+        return results;
+        
+      } else {
+        // Generate images sequentially
+        print('⏭️ Starting sequential image generation...');
+        final results = <String?>[];
+        
+        for (int i = 0; i < prompts.length; i++) {
+          try {
+            print('🖼️ Generating image ${i + 1}/${prompts.length}...');
+            final result = await generateSingleImage(prompt: prompts[i]);
+            
+            if (result['success'] == true && result.containsKey('imageBase64')) {
+              final base64 = result['imageBase64'] as String;
+              results.add('data:image/jpeg;base64,$base64');
+              print('✅ Image ${i + 1} completed');
+            } else {
+              results.add(null);
+              print('❌ Image ${i + 1} failed: ${result['error']}');
+            }
+          } catch (e) {
+            results.add(null);
+            print('❌ Image ${i + 1} error: $e');
+          }
+        }
+        
+        print('🏁 Sequential generation completed: ${results.where((r) => r != null).length}/${prompts.length} successful');
+        return results;
+      }
+      
+    } catch (e) {
+      print('❌ Multiple image generation error: $e');
+      throw Exception('Multiple image generation failed: $e');
+    }
+  }
+
+  // Legacy method for backward compatibility
   static Future<Map<String, dynamic>> generateImage({
     required String prompt,
     List<Uint8List>? images,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/images/generate'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'prompt': prompt,
-          'images': images?.map((img) => base64Encode(img)).toList(),
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to generate image: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
+    return generateSingleImage(prompt: prompt);
   }
 
   // Generate text

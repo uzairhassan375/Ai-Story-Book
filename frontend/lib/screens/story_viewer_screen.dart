@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../utils/app_colors.dart';
+import '../widgets/smart_image_widget.dart';
 import '../start_feedback_widget.dart';
 import '../models/story.dart';
 
@@ -187,7 +187,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           ),
           Expanded(
             child: Text(
@@ -196,7 +196,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: AppColors.primary,
               ),
             ),
           ),
@@ -225,7 +225,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: _buildContentSection(page),
+          child: SingleChildScrollView(
+            child: _buildContentSection(page),
+          ),
         ),
       ),
     );
@@ -236,6 +238,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       case PageType.title:
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (page.imageUrl != null) ...[
               Container(
@@ -255,36 +258,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: CachedNetworkImage(
+                  child: SmartImageWidget(
                     imageUrl: page.imageUrl!,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[200],
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_not_supported,
-                            size: 48,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Image not available',
-                            style: GoogleFonts.nunito(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -327,6 +303,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         
       case PageType.content:
         return Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Image at top for mobile-friendly layout
             if (page.imageUrl != null) ...[
@@ -347,47 +324,16 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: CachedNetworkImage(
+                  child: SmartImageWidget(
                     imageUrl: page.imageUrl!,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[200],
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_not_supported,
-                            size: 48,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Image not available',
-                            style: GoogleFonts.nunito(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ),
             ],
             
             // Story content with drop cap
-            Expanded(
-              child: SingleChildScrollView(
-                child: _buildStoryText(page.content ?? 'No content available'),
-              ),
-            ),
+            _buildStoryText(page.content ?? 'No content available'),
             
             // Audio Control Button at bottom
             Container(
@@ -443,36 +389,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: CachedNetworkImage(
+                  child: SmartImageWidget(
                     imageUrl: page.imageUrl!,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[200],
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_not_supported,
-                            size: 48,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Image not available',
-                            style: GoogleFonts.nunito(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ),

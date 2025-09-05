@@ -296,8 +296,10 @@ class StoryService:
             # Extract title from first page
             title = self._extract_title(pages[0]['script'])
             
-            # Generate images for each page
-            self._generate_images_for_pages(pages, theme)
+            # Images will be generated separately by frontend
+            # Initialize all pages with placeholder images
+            for page in pages:
+                page['imageUrl'] = f'https://via.placeholder.com/400x300/4A90E2/FFFFFF?text=Page+{page["pageNumber"]}'
             
             # Generate audio (placeholder)
             audio_url = self._generate_audio(pages)
@@ -782,8 +784,9 @@ def get_feedback_stats(story_id):
             'error': str(e)
         }), 500
 
-@app.route('/api/images/generate', methods=['POST'])
-def generate_image():
+@app.route('/api/generate-image', methods=['POST'])
+def generate_single_image():
+    """Generate a single image for story pages - optimized for Vercel timeout limits"""
     try:
         data = request.get_json()
         
@@ -791,7 +794,7 @@ def generate_image():
             return jsonify({'success': False, 'error': 'Missing prompt'}), 400
         
         prompt = data['prompt']
-        images = data.get('images', [])  # Optional reference images
+        print(f"🖼️ Generating single image for prompt: {prompt[:100]}...")
         
         if not gemini_api_key:
             return jsonify({
@@ -799,27 +802,38 @@ def generate_image():
                 'error': 'Gemini API key not configured'
             }), 500
         
-        result = gemini_image_service.generate_gemini_image(prompt, images)
+        # Generate single image with timeout protection
+        result = gemini_image_service.generate_gemini_image(prompt)
         
-        if result['success']:
+        if result['success'] and result.get('imageBytes'):
             # Convert image bytes to base64 for JSON response
             image_base64 = base64.b64encode(result['imageBytes']).decode('utf-8')
+            print(f"✅ Image generated successfully (base64 length: {len(image_base64)})")
+            
             return jsonify({
                 'success': True,
-                'imageBase64': image_base64,
-                'message': result['message']
+                'imageBase64': image_base64
             })
         else:
+            error_msg = result.get('error', 'Failed to generate image')
+            print(f"❌ Image generation failed: {error_msg}")
             return jsonify({
                 'success': False,
-                'error': result['error']
+                'error': error_msg
             }), 500
             
     except Exception as e:
+        print(f"❌ Exception in generate_single_image: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
+# Keep the old endpoint for backward compatibility
+@app.route('/api/images/generate', methods=['POST'])
+def generate_image_legacy():
+    """Legacy endpoint - redirects to new single image endpoint"""
+    return generate_single_image()
 
 @app.route('/api/images/<filename>')
 def serve_image(filename):

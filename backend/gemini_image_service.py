@@ -151,6 +151,7 @@ class GeminiImageService:
                 
                 # Check for safety blocks
                 if candidate.get('finishReason') in ['SAFETY', 'IMAGE_SAFETY']:
+                    print(f"🛡️ Safety filter triggered for prompt: {prompt[:100]}...")
                     return {
                         'success': False,
                         'error': 'Image generation blocked due to safety filters.'

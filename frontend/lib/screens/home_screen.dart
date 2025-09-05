@@ -358,6 +358,51 @@ class _HomeScreenState extends State<HomeScreen> {
                         
                         const SizedBox(height: 16),
                         
+                        // Image Generation Progress
+                        Consumer<StoryProvider>(
+                          builder: (context, storyProvider, child) {
+                            if (storyProvider.isLoadingImages) {
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.primary),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const CircularProgressIndicator(strokeWidth: 2),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'Generating images... ${storyProvider.imageProgress}/${storyProvider.totalImages}',
+                                            style: GoogleFonts.nunito(
+                                              color: AppColors.primary,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    LinearProgressIndicator(
+                                      value: storyProvider.imageProgressPercentage,
+                                      backgroundColor: Colors.grey.shade300,
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
                         // Error Display
                         Consumer<StoryProvider>(
                           builder: (context, storyProvider, child) {
