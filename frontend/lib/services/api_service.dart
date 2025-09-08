@@ -9,7 +9,7 @@ class ApiService {
   // static const String baseUrl = 'http://127.0.0.1:8080/api';
 
   // For production - Vercel deployment
-  static const String baseUrl = 'https://backend-nnb87jchz-uzairhassan375s-projects.vercel.app/api';
+  static const String baseUrl = 'https://backend-gqxa3h948-uzairhassan375s-projects.vercel.app/api';
   
   // Helper method to convert relative image URLs to absolute URLs
   static String getImageUrl(String imageUrl) {
@@ -22,7 +22,7 @@ class ApiService {
       return imageUrl;
     }
     // Otherwise, treat as relative URL
-    return 'https://backend-nnb87jchz-uzairhassan375s-projects.vercel.app$imageUrl';
+    return 'https://backend-gqxa3h948-uzairhassan375s-projects.vercel.app$imageUrl';
   }
   
   // Manual function to test ApiKeyPool

@@ -1,10 +1,41 @@
 import 'dart:async';
 import '../models/story.dart';
 import 'api_service.dart';
+import 'character_consistency_service.dart';
 
 class StoryImageService {
-  // Generate image prompts for story pages
-  static List<String> generateImagePrompts(Story story) {
+  // Generate image prompts for story pages with character consistency
+  static Future<List<String>> generateImagePrompts(Story story) async {
+    try {
+      print('🔍 Extracting character details for consistency...');
+      
+      // Extract character details from the story
+      final characters = await CharacterConsistencyService.extractCharacterDetails(story);
+      print('✅ Character details extracted: ${characters.keys.toList()}');
+      
+      final prompts = <String>[];
+      
+      for (int i = 0; i < story.pages.length; i++) {
+        final page = story.pages[i];
+        final imagePrompt = CharacterConsistencyService.buildConsistentImagePrompt(
+          pageScript: page.script,
+          theme: story.theme,
+          characters: characters,
+          pageNumber: page.pageNumber,
+        );
+        prompts.add(imagePrompt);
+      }
+      
+      return prompts;
+    } catch (e) {
+      print('❌ Error generating consistent prompts: $e');
+      // Fallback to old method
+      return _generateFallbackPrompts(story);
+    }
+  }
+
+  // Fallback method for generating prompts without character consistency
+  static List<String> _generateFallbackPrompts(Story story) {
     final prompts = <String>[];
     
     for (final page in story.pages) {
@@ -45,8 +76,8 @@ Format: High-quality digital art suitable for a children's book
     try {
       print('🎨 Starting image generation for ${story.pages.length} pages...');
       
-      // Generate image prompts
-      final prompts = generateImagePrompts(story);
+      // Generate image prompts with character consistency
+      final prompts = await generateImagePrompts(story);
       
       // Generate images
       final imageUrls = await ApiService.generateMultipleImages(
