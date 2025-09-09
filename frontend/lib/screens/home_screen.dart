@@ -5,6 +5,7 @@ import '../providers/story_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/app_colors.dart';
 import '../models/story.dart';
+import '../services/connectivity_service.dart';
 import 'story_viewer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -70,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedTheme = 'Adventure';
       }
     });
+    
   }
 
   @override
@@ -438,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _generateStory(BuildContext context) {
+  void _generateStory(BuildContext context) async {
     print('🚀 Generate Story button clicked');
 
     if (_promptController.text.trim().isEmpty) {
@@ -454,6 +456,18 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return;
     }
+
+    // Check internet connectivity before generating story
+    print('🔍 Checking internet connectivity...');
+    final hasInternet = await ConnectivityService.hasInternetConnection();
+    
+    if (!hasInternet) {
+      print('❌ No internet connection detected');
+      _showNoInternetDialog(context);
+      return;
+    }
+
+    print('✅ Internet connection verified');
 
     final request = StoryRequest(
       prompt: _promptController.text.trim(),
@@ -490,6 +504,124 @@ class _HomeScreenState extends State<HomeScreen> {
       print('🔴 Error: $error');
       print('🔴 Error type: ${error.runtimeType}');
     });
+  }
+
+  void _showNoInternetDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.wifi_off,
+                color: AppColors.error,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'No Internet Connection',
+                style: GoogleFonts.nunito(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Please check your internet connection and try again.',
+                style: GoogleFonts.nunito(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Story generation requires an active internet connection to access AI services.',
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                
+                // Check connectivity again
+                final hasInternet = await ConnectivityService.hasInternetConnection();
+                if (hasInternet) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Internet connection restored! You can now generate stories.',
+                        style: GoogleFonts.nunito(),
+                      ),
+                      backgroundColor: AppColors.success,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                'Check Again',
+                style: GoogleFonts.nunito(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'OK',
+                style: GoogleFonts.nunito(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
