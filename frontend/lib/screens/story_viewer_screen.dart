@@ -1,10 +1,17 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../utils/app_colors.dart';
 import '../widgets/smart_image_widget.dart';
-import '../start_feedback_widget.dart';
 import '../models/story.dart';
+import '../start_feedback_widget.dart';
 
 class StoryViewerScreen extends StatefulWidget {
   final Story story;
@@ -95,6 +102,335 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     ));
   }
 
+
+  Future<void> _downloadStoryAsPDF() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 16),
+              Text(
+                'Generating PDF...',
+                style: GoogleFonts.nunito(),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Create PDF content
+      final pdfContent = await _generatePDFContent();
+      
+      // Get directory for saving
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = '${widget.story.title.replaceAll(' ', '_')}_Story.pdf';
+      final filePath = '${directory.path}/$fileName';
+      
+      // Write PDF to file
+      final file = File(filePath);
+      await file.writeAsBytes(pdfContent);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Share the PDF
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        text: 'Check out this amazing story: ${widget.story.title}',
+      );
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'PDF downloaded successfully!',
+            style: GoogleFonts.nunito(),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      
+    } catch (e) {
+      // Close loading dialog if open
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error generating PDF: $e',
+            style: GoogleFonts.nunito(),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<Uint8List> _generatePDFContent() async {
+    final story = widget.story;
+    final pdf = pw.Document();
+    
+    // Add cover page
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            children: [
+              pw.Text(
+                story.title,
+                style: pw.TextStyle(
+                  fontSize: 28,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'A Story by AI Storybook',
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontStyle: pw.FontStyle.italic,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+              pw.SizedBox(height: 40),
+              pw.Text(
+                'Created: ${story.createdAt}',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    
+    // Add each story page with image and text
+    for (int i = 0; i < _pages.length; i++) {
+      final page = _pages[i];
+      
+      if (page.type == PageType.title) {
+        // Title page
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(40),
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  if (page.imageUrl != null) ...[
+                    pw.Container(
+                      width: 350,
+                      height: 250,
+                      margin: const pw.EdgeInsets.only(bottom: 40),
+                        child: _buildPDFImage(page.imageUrl!),
+                    ),
+                  ],
+                  pw.Text(
+                    page.title ?? story.title,
+                    style: pw.TextStyle(
+                      fontSize: 36,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.SizedBox(height: 20),
+                  pw.Text(
+                    'A Story by AI Storybook',
+                    style: pw.TextStyle(
+                      fontSize: 18,
+                      fontStyle: pw.FontStyle.italic,
+                      color: PdfColors.grey600,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      } else if (page.type == PageType.content) {
+        // Content page with image on top and text below
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(25),
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // Page number
+                  pw.Text(
+                    'Page ${page.pageNumber}',
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontStyle: pw.FontStyle.italic,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
+                  pw.SizedBox(height: 15),
+                  
+                  // Image on top - larger and centered
+                  if (page.imageUrl != null) ...[
+                    pw.Center(
+                      child: pw.Container(
+                        width: 400,
+                        height: 250,
+                        margin: const pw.EdgeInsets.only(bottom: 25),
+                        child: _buildPDFImage(page.imageUrl!),
+                      ),
+                    ),
+                  ],
+                  
+                  // Text content below - larger and better formatted
+                  pw.Container(
+                    width: double.infinity,
+                    padding: const pw.EdgeInsets.all(20),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.grey50,
+                      border: pw.Border.all(color: PdfColors.grey200),
+                    ),
+                    child: pw.Text(
+                      page.content ?? '',
+                      style: const pw.TextStyle(
+                        fontSize: 16,
+                        lineSpacing: 1.8,
+                        color: PdfColors.black,
+                      ),
+                      textAlign: pw.TextAlign.justify,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      } else if (page.type == PageType.end) {
+        // End page
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(40),
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  if (page.imageUrl != null) ...[
+                    pw.Container(
+                      width: 350,
+                      height: 250,
+                      margin: const pw.EdgeInsets.only(bottom: 40),
+                        child: _buildPDFImage(page.imageUrl!),
+                    ),
+                  ],
+                  pw.Text(
+                    'The End',
+                    style: pw.TextStyle(
+                      fontSize: 36,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.SizedBox(height: 25),
+                  pw.Text(
+                    'Thank you for reading!',
+                    style: pw.TextStyle(
+                      fontSize: 20,
+                      fontStyle: pw.FontStyle.italic,
+                      color: PdfColors.grey600,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.SizedBox(height: 50),
+                  pw.Container(
+                    width: 200,
+                    height: 1,
+                    color: PdfColors.grey300,
+                  ),
+                  pw.SizedBox(height: 25),
+                  pw.Text(
+                    'Generated by AI Storybook',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontStyle: pw.FontStyle.italic,
+                      color: PdfColors.grey500,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      }
+    }
+    
+    return await pdf.save();
+  }
+
+  pw.Widget _buildPDFImage(String imageUrl) {
+    if (imageUrl.startsWith('data:image/')) {
+      // Handle base64 images
+      try {
+        final base64String = imageUrl.split(',')[1];
+        final imageBytes = base64Decode(base64String);
+        return pw.Image(
+          pw.MemoryImage(imageBytes),
+          fit: pw.BoxFit.cover,
+        );
+      } catch (e) {
+        return pw.Container(
+          color: PdfColors.grey300,
+          child: pw.Center(
+            child: pw.Text(
+              'Image Error',
+              style: pw.TextStyle(fontSize: 12),
+            ),
+          ),
+        );
+      }
+    } else if (imageUrl.startsWith('http')) {
+      // Handle network images - for now show placeholder
+      // In a full implementation, you'd download the image first
+      return pw.Container(
+        color: PdfColors.grey300,
+        child: pw.Center(
+          child: pw.Text(
+            'Network Image',
+            style: pw.TextStyle(fontSize: 12),
+          ),
+        ),
+      );
+    } else {
+      // Handle other image types
+      return pw.Container(
+        color: PdfColors.grey300,
+        child: pw.Center(
+          child: pw.Text(
+            'Image',
+            style: pw.TextStyle(fontSize: 12),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -154,6 +490,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               // Header
               _buildHeader(),
               
+              // Progress Bar
+              _buildProgressBar(),
+              
               // Story Pages
               Expanded(
                 child: PageView.builder(
@@ -200,8 +539,71 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               ),
             ),
           ),
-          // Audio button removed - now shown at bottom of story pages
-          const SizedBox(width: 48), // Spacer to keep title centered
+          // Feedback button using StarFeedbackWidget
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: StarFeedbackWidget(
+              size: 20,
+              mainContext: context,
+              icon: Icons.flag,
+              isShowText: false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressBar() {
+    final progress = (_currentPage + 1) / _pages.length;
+    final remaining = _pages.length - (_currentPage + 1);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Page ${_currentPage + 1} of ${_pages.length}',
+                style: GoogleFonts.nunito(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                '$remaining pages left',
+                style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.grey.shade200,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            minHeight: 6,
+          ),
         ],
       ),
     );
@@ -335,31 +737,34 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             // Story content with drop cap
             _buildStoryText(page.content ?? 'No content available'),
             
-            // Audio Control Button at bottom
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: 20),
-              child: ElevatedButton.icon(
-                onPressed: _playCurrentPage,
-                icon: Icon(
-                  _isPlaying ? Icons.pause : Icons.play_arrow,
-                  size: 24,
-                ),
-                label: Text(
-                  _isPlaying ? 'Pause Audio' : 'Listen to Story',
-                  style: GoogleFonts.nunito(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+            // Audio Control Button at bottom (hidden for now)
+            Visibility(
+              visible: false, // Hidden as requested
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 20),
+                child: ElevatedButton.icon(
+                  onPressed: _playCurrentPage,
+                  icon: Icon(
+                    _isPlaying ? Icons.pause : Icons.play_arrow,
+                    size: 24,
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isPlaying ? Colors.red : AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  label: Text(
+                    _isPlaying ? 'Pause Audio' : 'Listen to Story',
+                    style: GoogleFonts.nunito(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  elevation: 4,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isPlaying ? Colors.red : AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 4,
+                  ),
                 ),
               ),
             ),
@@ -419,12 +824,32 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 fontStyle: FontStyle.italic,
               ),
             ),
-            const SizedBox(height: 24),
-            StarFeedbackWidget(
-              size: 28,
-              mainContext: context,
-              icon: Icons.feedback,
-              isShowText: true,
+            const SizedBox(height: 32),
+            
+            // Download PDF Button
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              child: ElevatedButton.icon(
+                onPressed: _downloadStoryAsPDF,
+                icon: const Icon(Icons.download, size: 20),
+                label: Text(
+                  'Download Story as PDF',
+                  style: GoogleFonts.nunito(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+              ),
             ),
           ],
         );

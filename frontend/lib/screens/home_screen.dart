@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -74,365 +75,412 @@ class _HomeScreenState extends State<HomeScreen> {
     
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF667eea).withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_stories,
+                size: 28,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // App Logo/Title
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.auto_stories,
-                          size: 60,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'AI Storybook',
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Create magical stories with AI',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    'AI Storybook',
+                    style: GoogleFonts.nunito(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2c3e50),
                     ),
                   ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Story Creation Form
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Theme Selection
-                                                       Text(
-                                 'Choose a Theme',
-                                 style: const TextStyle(
-                                   fontFamily: 'Nunito',
-                                   fontSize: 18,
-                                   fontWeight: FontWeight.bold,
-                                   color: AppColors.textPrimary,
-                                 ),
-                               ),
-                        const SizedBox(height: 12),
-                        
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedTheme,
-                              isExpanded: true,
-                              hint: Row(
-                                children: [
-                                  Icon(
-                                    Icons.palette,
-                                    color: AppColors.primary,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Select Theme',
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              selectedItemBuilder: (BuildContext context) {
-                                return _themes.map((theme) {
-                                  return Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: theme['color'].withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Icon(
-                                          theme['icon'],
-                                          color: theme['color'],
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        theme['name'],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          color: AppColors.textPrimary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }).toList();
-                              },
-                              items: _themes.map((theme) {
-                                return DropdownMenuItem<String>(
-                                  value: theme['name'],
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: theme['color'].withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Icon(
-                                          theme['icon'],
-                                          color: theme['color'],
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        theme['name'],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          color: AppColors.textPrimary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _selectedTheme = newValue ?? 'Adventure';
-                                });
-                                try {
-                                  context.read<ThemeProvider>().setTheme(_selectedTheme);
-                                } catch (e) {
-                                  // Provider not available, continue with local state
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Story Prompt
-                        Text(
-                          'Story Prompt',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: TextField(
-                            controller: _promptController,
-                            maxLines: 4,
-                            decoration: InputDecoration(
-                              hintText: 'Describe your story idea...',
-                              hintStyle: const TextStyle(
-                                color: AppColors.textLight,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(16),
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Additional Context
-                        Text(
-                          'Additional Context (Optional)',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: TextField(
-                            controller: _contextController,
-                            maxLines: 3,
-                            decoration: InputDecoration(
-                              hintText: 'Any additional details or preferences...',
-                              hintStyle: const TextStyle(
-                                color: AppColors.textLight,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(16),
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 32),
-                        
-                        // Generate Button
-                        Consumer<StoryProvider>(
-                          builder: (context, storyProvider, child) {
-                            return SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: storyProvider.isLoading
-                                    ? null
-                                    : () => _generateStory(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: storyProvider.isLoading
-                                    ? const CircularProgressIndicator(color: Colors.white)
-                                    : Text(
-                                        'Generate Story',
-                                        style: GoogleFonts.nunito(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                              ),
-                            );
-                          },
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Image Generation Progress
-                        Consumer<StoryProvider>(
-                          builder: (context, storyProvider, child) {
-                            if (storyProvider.isLoadingImages) {
-                              return Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.primary),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const CircularProgressIndicator(strokeWidth: 2),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            'Generating images... ${storyProvider.imageProgress}/${storyProvider.totalImages}',
-                                            style: GoogleFonts.nunito(
-                                              color: AppColors.primary,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    LinearProgressIndicator(
-                                      value: storyProvider.imageProgressPercentage,
-                                      backgroundColor: Colors.grey.shade300,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Error Display
-                        Consumer<StoryProvider>(
-                          builder: (context, storyProvider, child) {
-                            if (storyProvider.error != null) {
-                              return Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.error.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.error),
-                                ),
-                                child: Text(
-                                  storyProvider.error!,
-                                  style: GoogleFonts.nunito(
-                                    color: AppColors.error,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                      ],
+                  Text(
+                    'Create magical stories with AI',
+                    style: GoogleFonts.nunito(
+                      fontSize: 14,
+                      color: const Color(0xFF7f8c8d),
                     ),
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStoryForm() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFe0e6ed),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Story Prompt Section
+          Text(
+            'What story would you like to create?',
+            style: GoogleFonts.nunito(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF2c3e50),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Story Prompt Input
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFe0e6ed),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _promptController,
+              maxLines: 4,
+              style: GoogleFonts.nunito(
+                color: const Color(0xFF2c3e50),
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                hintText: 'A brave knight rescues a dragon from a princess...',
+                hintStyle: GoogleFonts.nunito(
+                  color: const Color(0xFF95a5a6),
+                  fontSize: 14,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(18),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Generate Button
+          _buildGenerateButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenerateButton() {
+    return Consumer<StoryProvider>(
+      builder: (context, storyProvider, child) {
+        return SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: storyProvider.isLoading || storyProvider.isLoadingImages
+                ? null
+                : () => _generateStory(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF667eea).withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: (storyProvider.isLoading || storyProvider.isLoadingImages)
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Generating Story...',
+                          style: GoogleFonts.nunito(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.auto_stories, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Generate Story',
+                          style: GoogleFonts.nunito(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeInspirations() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.lightbulb_outline,
+              color: Colors.amber,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Story Inspirations',
+              style: GoogleFonts.nunito(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2c3e50),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Choose a theme to spark your creativity',
+          style: GoogleFonts.nunito(
+            fontSize: 14,
+            color: const Color(0xFF7f8c8d),
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // Theme Cards
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _themes.map((theme) {
+            final isSelected = _selectedTheme == theme['name'];
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedTheme = theme['name'] as String;
+                });
+                try {
+                  context.read<ThemeProvider>().setTheme(_selectedTheme);
+                } catch (e) {
+                  // Provider not available, continue with local state
+                }
+              },
+              child: Container(
+                width: (MediaQuery.of(context).size.width - 64) / 2,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: isSelected 
+                      ? LinearGradient(
+                          colors: [
+                            theme['color'] as Color,
+                            (theme['color'] as Color).withOpacity(0.8),
+                          ],
+                        )
+                      : LinearGradient(
+                          colors: [
+                            Colors.white,
+                            const Color(0xFFf8f9ff),
+                          ],
+                        ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected 
+                        ? theme['color'] as Color
+                        : const Color(0xFFe0e6ed),
+                    width: isSelected ? 2 : 1,
+                  ),
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: (theme['color'] as Color).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ] : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        theme['icon'] as IconData,
+                        size: 16,
+                        color: isSelected ? Colors.white : theme['color'] as Color,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        theme['name'] as String,
+                        style: GoogleFonts.nunito(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : const Color(0xFF2c3e50),
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          size: 10,
+                          color: Colors.black,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFf8f9ff), // Fallback color
+      body: Container(
+        height: MediaQuery.of(context).size.height,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFf8f9ff),
+              Color(0xFFe8f2ff),
+              Color(0xFFf0f4ff),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Section
+                _buildHeader(),
+                
+                const SizedBox(height: 32),
+                
+                // Story Creation Form
+                _buildStoryForm(),
+                
+                const SizedBox(height: 24),
+                
+                // Theme Inspirations Section
+                _buildThemeInspirations(),
+                
+                const SizedBox(height: 16),
+                
+                // Error Display
+                Consumer<StoryProvider>(
+                  builder: (context, storyProvider, child) {
+                    if (storyProvider.error != null) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.error),
+                        ),
+                        child: Text(
+                          storyProvider.error!,
+                          style: GoogleFonts.nunito(
+                            color: AppColors.error,
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -482,27 +530,40 @@ class _HomeScreenState extends State<HomeScreen> {
     print('   - Theme: ${request.theme}');
     print('   - Additional Context: ${request.additionalContext}');
 
-    context.read<StoryProvider>().generateStory(request).then((_) {
-      print('🎯 Story generation promise resolved');
+    // Listen to story provider changes to navigate when everything is complete
       final storyProvider = context.read<StoryProvider>();
-      if (storyProvider.currentStory != null) {
-        print('✅ Story generated, navigating to viewer');
+    
+    // Start the story generation process
+    storyProvider.generateStory(request);
+    
+    // Listen for completion (both story text and images done)
+    void checkCompletion() {
+      if (!storyProvider.isLoading && !storyProvider.isLoadingImages && storyProvider.currentStory != null) {
+        print('✅ Story and images complete, navigating to viewer');
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => StoryViewerScreen(story: storyProvider.currentStory!),
           ),
         );
-      } else {
-        print('❌ No story generated, checking for errors...');
-        if (storyProvider.error != null) {
-          print('🔴 Provider error: ${storyProvider.error}');
-        }
+      } else if (!storyProvider.isLoading && !storyProvider.isLoadingImages && storyProvider.error != null) {
+        print('❌ Story generation failed: ${storyProvider.error}');
       }
-    }).catchError((error) {
-      print('💥 Generate story promise error:');
-      print('🔴 Error: $error');
-      print('🔴 Error type: ${error.runtimeType}');
+    }
+    
+    // Check completion periodically
+    Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      
+      checkCompletion();
+      
+      // Cancel timer if we're done (either success or error)
+      if (!storyProvider.isLoading && !storyProvider.isLoadingImages) {
+        timer.cancel();
+      }
     });
   }
 
