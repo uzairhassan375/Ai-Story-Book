@@ -262,6 +262,7 @@ class ApiService {
   // Generate single image - optimized for Vercel
   static Future<Map<String, dynamic>> generateSingleImage({
     required String prompt,
+    String? modelName,
   }) async {
     try {
       print('🖼️ Generating single image for prompt: ${prompt.substring(0, 50)}...');
@@ -271,6 +272,7 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'prompt': prompt,
+          'modelName': modelName,
         }),
       ).timeout(const Duration(seconds: 30)); // 30 second timeout
 
@@ -294,6 +296,7 @@ class ApiService {
   static Future<List<String?>> generateMultipleImages({
     required List<String> prompts,
     bool parallel = true,
+    String? modelName,
   }) async {
     try {
       print('🎨 Generating ${prompts.length} images (parallel: $parallel)...');
@@ -308,7 +311,7 @@ class ApiService {
           
           try {
             print('🖼️ Starting image $index...');
-            final result = await generateSingleImage(prompt: prompt);
+            final result = await generateSingleImage(prompt: prompt, modelName: modelName);
             
             if (result['success'] == true && result.containsKey('imageBase64')) {
               final base64 = result['imageBase64'] as String;
@@ -336,7 +339,7 @@ class ApiService {
         for (int i = 0; i < prompts.length; i++) {
           try {
             print('🖼️ Generating image ${i + 1}/${prompts.length}...');
-            final result = await generateSingleImage(prompt: prompts[i]);
+            final result = await generateSingleImage(prompt: prompts[i], modelName: modelName);
             
             if (result['success'] == true && result.containsKey('imageBase64')) {
               final base64 = result['imageBase64'] as String;
@@ -366,8 +369,9 @@ class ApiService {
   static Future<Map<String, dynamic>> generateImage({
     required String prompt,
     List<Uint8List>? images,
+    String? modelName,
   }) async {
-    return generateSingleImage(prompt: prompt);
+    return generateSingleImage(prompt: prompt, modelName: modelName);
   }
 
   // Generate text
@@ -376,6 +380,7 @@ class ApiService {
     String? systemInstruction,
     Map<String, dynamic>? generationConfig,
     List<Uint8List>? images,
+    String? modelName,
   }) async {
     try {
       final response = await http.post(
@@ -386,6 +391,7 @@ class ApiService {
           'systemInstruction': systemInstruction,
           'generationConfig': generationConfig,
           'images': images?.map((img) => base64Encode(img)).toList(),
+          'modelName': modelName,
         }),
       );
 

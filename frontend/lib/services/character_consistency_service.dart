@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/story.dart';
+import '../utils/ai_config.dart';
 import 'api_service.dart';
 
 class CharacterConsistencyService {
@@ -46,30 +46,24 @@ Example:
 }
 ''';
 
-      final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/text/generate'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'prompt': characterPrompt,
-          'systemInstruction': 'You are an expert at analyzing children\'s stories and extracting consistent character descriptions for illustration. Always respond with valid JSON format.',
-        }),
-      ).timeout(const Duration(seconds: 30));
+      final result = await ApiService.generateText(
+        prompt: characterPrompt,
+        systemInstruction: 'You are an expert at analyzing children\'s stories and extracting consistent character descriptions for illustration. Always respond with valid JSON format.',
+        modelName: AIConfig.modelName,
+      );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['text'] != null) {
-          final characterText = data['text'] as String;
-          print('✅ Character analysis completed');
-          
-          // Parse the JSON response
-          try {
-            final characterData = jsonDecode(characterText);
-            print('📋 Extracted characters: ${characterData['characters']?.keys?.toList()}');
-            return Map<String, String>.from(characterData['characters'] ?? {});
-          } catch (e) {
-            print('❌ Error parsing character JSON: $e');
-            return _extractCharactersFromText(characterText);
-          }
+      if (result['success'] == true && result['text'] != null) {
+        final characterText = result['text'] as String;
+        print('✅ Character analysis completed');
+        
+        // Parse the JSON response
+        try {
+          final characterData = jsonDecode(characterText);
+          print('📋 Extracted characters: ${characterData['characters']?.keys?.toList()}');
+          return Map<String, String>.from(characterData['characters'] ?? {});
+        } catch (e) {
+          print('❌ Error parsing character JSON: $e');
+          return _extractCharactersFromText(characterText);
         }
       }
       

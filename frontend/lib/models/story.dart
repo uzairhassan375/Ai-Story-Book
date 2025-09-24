@@ -107,11 +107,13 @@ class StoryRequest {
   final String prompt;
   final String theme;
   final String? additionalContext;
+  final String? modelName;
 
   StoryRequest({
     required this.prompt,
     required this.theme,
     this.additionalContext,
+    this.modelName,
   });
 
   Map<String, dynamic> toJson() {
@@ -119,6 +121,7 @@ class StoryRequest {
       'prompt': prompt,
       'theme': theme,
       'additionalContext': additionalContext,
+      'modelName': modelName,
     };
   }
 }

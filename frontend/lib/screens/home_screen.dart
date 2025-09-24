@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/story_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/app_colors.dart';
+import '../utils/ai_config.dart';
 import '../models/story.dart';
 import '../services/connectivity_service.dart';
 import 'story_viewer_screen.dart';
@@ -489,10 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _generateStory(BuildContext context) async {
-    print('🚀 Generate Story button clicked');
-
     if (_promptController.text.trim().isEmpty) {
-      print('⚠️ Empty prompt detected');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -506,16 +504,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Check internet connectivity before generating story
-    print('🔍 Checking internet connectivity...');
     final hasInternet = await ConnectivityService.hasInternetConnection();
     
     if (!hasInternet) {
-      print('❌ No internet connection detected');
       _showNoInternetDialog(context);
       return;
     }
-
-    print('✅ Internet connection verified');
 
     final request = StoryRequest(
       prompt: _promptController.text.trim(),
@@ -523,12 +517,8 @@ class _HomeScreenState extends State<HomeScreen> {
       additionalContext: _contextController.text.trim().isNotEmpty
           ? _contextController.text.trim()
           : null,
+      modelName: AIConfig.modelName,
     );
-
-    print('📝 Story Request created:');
-    print('   - Prompt: ${request.prompt}');
-    print('   - Theme: ${request.theme}');
-    print('   - Additional Context: ${request.additionalContext}');
 
     // Listen to story provider changes to navigate when everything is complete
       final storyProvider = context.read<StoryProvider>();
@@ -539,15 +529,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // Listen for completion (both story text and images done)
     void checkCompletion() {
       if (!storyProvider.isLoading && !storyProvider.isLoadingImages && storyProvider.currentStory != null) {
-        print('✅ Story and images complete, navigating to viewer');
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => StoryViewerScreen(story: storyProvider.currentStory!),
           ),
         );
-      } else if (!storyProvider.isLoading && !storyProvider.isLoadingImages && storyProvider.error != null) {
-        print('❌ Story generation failed: ${storyProvider.error}');
       }
     }
     

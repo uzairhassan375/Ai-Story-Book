@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../models/story.dart';
+import '../utils/ai_config.dart';
 import 'api_service.dart';
 import 'character_consistency_service.dart';
 
@@ -83,6 +84,7 @@ Format: High-quality digital art suitable for a children's book
       final imageUrls = await ApiService.generateMultipleImages(
         prompts: prompts,
         parallel: parallel,
+        modelName: AIConfig.modelName,
       );
       
       // Update story pages with generated images
@@ -142,7 +144,10 @@ Format: High-quality digital art suitable for a children's book
   ) async {
     try {
       final prompt = _buildImagePrompt(page.script, theme);
-      final result = await ApiService.generateSingleImage(prompt: prompt);
+      final result = await ApiService.generateSingleImage(
+        prompt: prompt,
+        modelName: AIConfig.modelName,
+      );
       
       if (result['success'] == true && result.containsKey('imageBase64')) {
         final base64 = result['imageBase64'] as String;
